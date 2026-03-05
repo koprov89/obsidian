@@ -1,4 +1,7 @@
-# Методология обратной разработки — Практическое руководство
+with open(OUTFILE, "wb") as f:
+    f.write(data)
+print(f"[+] Saved: {OUTFILE}")
+print(f"[*] First 16 bytes: {data[:16].hex()}")# Методология обратной разработки — Практическое руководство
 ## «GodInfo 2FA Loader» — Полное воспроизведение анализа
 
 **Образец:** `IMAGE_IM_3b0844298f7151492fbf4c8996fb92427674144649b93465495991b7852b855&.pif`
@@ -798,10 +801,7 @@ finally:
     s.close()
 
 print(f"\n[+] Received {len(data)} bytes")
-with open(OUTFILE, "wb") as f:
-    f.write(data)
-print(f"[+] Saved: {OUTFILE}")
-print(f"[*] First 16 bytes: {data[:16].hex()}")
+
 EOF
 ```
 
