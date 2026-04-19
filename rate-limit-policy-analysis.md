@@ -325,7 +325,7 @@ Action: block
 
 ---
 
-## 8. Summary Table
+## 8. Recommendations Summary
 
 | # | Action | Expected Impact | Priority |
 |---|--------|-----------------|----------|
@@ -357,7 +357,58 @@ Based on legitimate user p99 behavior from beef.casino:
 
 ---
 
-## 10. What Is Working Well
+## 10. `path_and_ip` Rule — Threshold Analysis
+
+**Rule**: `path_and_ip` | action: `block` | condition: `starts_with(http.request.uri.path, "/")` | characteristics: `ip.src + req.uri.path`
+
+This rule counts requests **per (ClientIP, ClientRequestPath) pair** — a separate counter per unique path per IP. Finding the right threshold requires knowing how many times a real casino user hits the same path in a given window.
+
+### Methodology
+
+- **Baseline**: 2026-04-10 – 2026-04-16 (confirmed clean week)
+- **Zones**: Casino-only (excluded: tradersp2p.com, brother-route.com, dev001.ru, paymentsp2p.com, royal.partners)
+- **IPs excluded**: All entries from `our_addresses.csv` and `good_addresses.csv` (offices, partners, monitoring, VPNs, Google crawlers, P2P trading bots)
+- **Traffic filter**: `SecurityAction` in `""`, `skip`, `log` — only requests that passed normally
+- **Script**: `analyze_path_ip_rate.py`
+
+### Results
+
+| Window | Path | Max req/window/IP | p99.9 |
+|--------|------|-------------------|-------|
+| 1 min | (all top paths) | ≤ 2 | — |
+| 10 min | /cdn-cgi/rum | **50** | 13.0 |
+| 10 min | /api/v2/player/bonuses | **49** | 22.0 |
+| 10 min | (other paths) | < 30 | < 15 |
+
+No legitimate casino user exceeded **2 requests per minute** on any single path during the baseline week.
+
+The highest 10-minute rate observed was **50 req/10min** on `/cdn-cgi/rum` (Cloudflare Real User Monitoring). The attack reference point is 480 req/min per IP = 4800 req/10min per IP.
+
+### Recommendation
+
+| Window | Threshold | Legit max | Attack rate | Separation factor |
+|--------|-----------|-----------|-------------|-------------------|
+| 1 min  | **10 req/min/IP** | ≤ 2 | 480 | 240× |
+| 10 min | **100 req/10min/IP** | 50 | 4800 | 48× |
+
+Use **10-minute window with threshold 100**. This provides:
+- Zero false positives (legitimate max is 50, threshold is 100 = 2× headroom)
+- 48× gap from attack rate (4800 req/10min)
+
+### IPs to Add to Allowlist
+
+Two P2P trading bot IPs were found exceeding the threshold during the baseline week. They are not in `our_addresses.csv` or `good_addresses.csv` but represent legitimate partner integrations:
+
+| IP | Rate observed | Domain context |
+|----|---------------|----------------|
+| `216.173.69.199` | 382 req/min on /api paths | tradersp2p.com |
+| `185.177.0.239` | 275 req/min on /api paths | tradersp2p.com |
+
+Add both to `good_addresses.csv` and to the Cloudflare IP allowlist rule before activating `path_and_ip` at the recommended threshold.
+
+---
+
+## 11. What Is Working Well
 
 - **Rate-limit rules** (`rateLimit` source): 0.01% bypass rate — nearly perfect, scaled 163× during attack
 - **Block rules** (`firewallCustom`): 1.24M blocks/week in normal times, consistent
