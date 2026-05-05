@@ -33,7 +33,6 @@ selects the employee's account, and executes a session termination or full data 
 | `GLOBAL_ADMIN_IDS` | yes | Comma-separated Telegram user IDs of global admins |
 | `GLOBAL_EXECUTOR_IDS` | no | Comma-separated Telegram user IDs of global executors |
 | `GLOBAL_MANAGER_IDS` | no | Comma-separated Telegram user IDs of global managers |
-| `ALLOWED_PHONES` | yes | Comma-separated phone numbers allowed to self-register |
 
 Session files are stored in `sessions/`. The database file is `tgwipe.db`. Logs go to `tgwipe.log`.
 
@@ -388,8 +387,6 @@ Admin clicks "Add user"
   → (2FA password if the account has it)
   → Session saved to sessions/ → user record created in DB
 ```
-
-A phone number whitelist (`ALLOWED_PHONES`) prevents unauthorized self-registration.
 
 ---
 
